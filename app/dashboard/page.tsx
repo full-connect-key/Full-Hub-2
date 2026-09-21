@@ -1,8 +1,8 @@
 import { getSessionUser } from "@/lib/auth/session";
 
-export const metadata = { title: "Painel Interno · Full Hub" };
+export const metadata = { title: "Dashboard · Full Hub" };
 
-export default async function PainelHome() {
+export default async function DashboardHome() {
   const user = await getSessionUser();
 
   return (
@@ -11,7 +11,7 @@ export default async function PainelHome() {
         Olá, {user?.nome || "equipe"}.
       </h1>
       <p className="mt-2 text-sm text-fh-muted">
-        Este é o Painel Interno do Full Hub. Use o menu ao lado para navegar — os módulos serão
+        Este é o Dashboard Full. Use o menu ao lado para navegar — os módulos serão
         entregues nos próximos sprints.
       </p>
     </div>

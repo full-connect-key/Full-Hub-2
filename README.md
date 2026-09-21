@@ -1,9 +1,9 @@
 # Full Hub
 
-Plataforma da agência com duas áreas sobre o mesmo backend:
+Plataforma da agência com dois ambientes sobre o mesmo backend:
 
-- **Painel Interno** (`/painel`) — equipe da agência
-- **Portal do Cliente** (`/portal`) — clientes da agência
+- **Dashboard Full** (`/dashboard`) — equipe da Full Connect Key
+- **Portal do Cliente** (`/portal/<empresa>`) — cada cliente no seu endereço
 
 Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Auth + Postgres).
 
@@ -14,14 +14,28 @@ Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Aut
 
 ## Perfis de acesso
 
-| Perfil | Área | Acesso |
+| Perfil | Ambiente | Acesso |
 |---|---|---|
-| `cliente` | Portal do Cliente | Apenas dados da(s) empresa(s) à(s) qual(is) está vinculado |
-| `colaborador` | Painel Interno | Tarefas, Diário, Mês a Mês, Skills, Recomendações |
-| `desenvolvedor` | Painel Interno | Tudo, **exceto** Financeiro |
-| `socio` | Painel Interno | Tudo, incluindo Financeiro e Aprovações de RH |
+| `cliente` | Portal do Cliente | Somente a empresa à qual está vinculado |
+| `colaborador` | Dashboard Full | Tarefas, Diário, Mês a Mês, Skills, Recomendações |
+| `desenvolvedor` | Dashboard Full + qualquer portal | Tudo, **exceto** Financeiro |
+| `socio` | Dashboard Full + qualquer portal | Tudo, incluindo Financeiro e Aprovações de RH |
 
-Após o login o usuário é redirecionado automaticamente: `cliente` → `/portal`, os demais → `/painel`.
+Após o login o destino sai do banco: `cliente` vai para `/portal/<empresa>`, os demais para
+`/dashboard`. A escolha "Sou Colaborador / Sou Cliente" na tela de login define só a experiência
+de entrada — se não bater com o perfil cadastrado, o banco vence.
+
+### Endereço de cada cliente
+
+Cada empresa tem um `slug` gerado do nome: *Mundo Verde* → `/portal/mundo-verde`. O cliente não
+escolhe qual conta abrir; o endereço vem do cadastro. Homônimos recebem sufixo (`mundo-verde-2`).
+Trocar o slug na URL não abre a conta alheia — a consulta passa pelo RLS e volta vazia.
+
+### Visita administrativa
+
+`desenvolvedor` e `socio` abrem o portal de qualquer cliente **mantendo a própria identidade** —
+não existe "entrar como" o cliente. Uma faixa no topo deixa isso explícito, e a sessão continua
+sendo a da pessoa interna.
 
 Podem existir vários usuários por empresa cliente, todos com o mesmo nível de acesso
 (sem hierarquia entre eles) — o vínculo fica em `client_users`.
@@ -38,6 +52,20 @@ O bloqueio é aplicado em três camadas:
 3. **RLS no Postgres** — isola os dados por `client_id`, mesmo que a camada web falhe
 
 A sidebar apenas *esconde* o que essas camadas já proíbem.
+
+> **Regra arquitetural:** todo dado que pertence a um cliente precisa ter dono identificável por
+> `client_id` — direto na tabela ou por uma relação-pai inequívoca. Vale para tudo que vier
+> (posts, campanhas, arquivos, aprovações, comentários). Dashboard e Portal trabalham sobre os
+> mesmos registros; nunca duplicar base para as duas interfaces.
+
+### Testes
+
+```bash
+npm test     # 21 verificações de rota e permissão por perfil
+```
+
+Os testes de RLS rodam contra um Postgres local — 23 verificações, ver
+[supabase/tests](supabase/tests/README.md).
 
 ---
 
@@ -136,7 +164,7 @@ Para publicar na VPS, veja **[DEPLOY.md](DEPLOY.md)**.
   lida do cookie.
 - **Portal do Cliente**: encerramento automático após **30 minutos de inatividade**
   (`components/inactivity-guard.tsx`). O carimbo de atividade é compartilhado entre abas via
-  `localStorage`, então abas paralelas não derrubam umas às outras. O Painel Interno não tem
+  `localStorage`, então abas paralelas não derrubam umas às outras. O Dashboard Full não tem
   esse timeout.
 - A recuperação de senha responde sempre a mesma mensagem, existindo a conta ou não, para não
   permitir enumeração de usuários.
@@ -151,24 +179,28 @@ Para publicar na VPS, veja **[DEPLOY.md](DEPLOY.md)**.
 
 ```
 app/
-  login/                  tela de login (logo central, e-mail, senha, esqueci a senha)
+  login/                  escolha do ambiente + e-mail, senha e mostrar/ocultar
   esqueci-senha/          solicitação do link de recuperação
   redefinir-senha/        criação da nova senha
   auth/confirm/           consome o link do e-mail e abre a sessão
   auth/signout/           encerra a sessão
-  painel/                 Painel Interno (layout + telas por módulo)
-  portal/                 Portal do Cliente (layout com timeout + telas)
+  dashboard/              Dashboard Full (layout + telas por módulo)
+  portal/                 raiz: cliente é encaminhado, equipe escolhe a conta
+  portal/[slug]/          Portal de uma empresa (timeout + telas)
 components/
   logo.tsx                marca "Full Hub"
   sidebar.tsx             menu lateral já filtrado por role
-  app-shell.tsx           moldura comum às duas áreas
+  app-shell.tsx           moldura comum aos dois ambientes
+  viewing-as-banner.tsx   faixa de visita administrativa
   inactivity-guard.tsx    timeout de 30 min do Portal
   page-placeholder.tsx    tela vazia dos módulos futuros
 lib/
   auth/roles.ts           perfis, menus e autorização de rota
   auth/session.ts         usuário da sessão + guardas de servidor
   supabase/               clients (browser / server / middleware)
-supabase/migrations/      schema e RLS
+supabase/migrations/      schema, RLS e slugs
+supabase/tests/           testes de RLS
+tests/                    testes de rota e permissão
 middleware.ts             refresh de sessão + bloqueio por role
 ```
 
@@ -176,10 +208,12 @@ middleware.ts             refresh de sessão + bloqueio por role
 
 ## Decisões que valem revisar
 
-- **Aprovações de RH** (`/painel/rh/aprovacoes`) ficaram restritas a `socio`, seguindo a
+- **Colaborador não abre portal de cliente.** O roadmap cita apenas `desenvolvedor` e `socio`
+  com acesso administrativo às contas. Muda-se em `PORTAL_ADMIN_ROLES`.
+- **Aprovações de RH** (`/dashboard/rh/aprovacoes`) ficaram restritas a `socio`, seguindo a
   descrição do perfil. Se `desenvolvedor` também precisar aprovar, basta incluir o role no item
   correspondente em `lib/auth/roles.ts`.
 - Rotas internas ainda não mapeadas no menu ficam liberadas aos perfis internos por padrão —
-  exceto sob `/painel/financeiro`, que é sempre restrito a `socio`.
+  exceto sob `/dashboard/financeiro`, que é sempre restrito a `socio`.
 - O `role` é lido de `public.users` a cada request no middleware. Se o volume justificar,
   o passo seguinte é promovê-lo a claim no JWT (`app_metadata`) e ler direto do token.

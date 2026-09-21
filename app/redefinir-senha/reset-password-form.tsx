@@ -42,7 +42,14 @@ export function ResetPasswordForm() {
       .maybeSingle();
 
     const role = isRole(profile?.role) ? profile.role : "cliente";
-    router.replace(homeForRole(role));
+
+    let clientSlug: string | null = null;
+    if (role === "cliente") {
+      const { data: slug } = await supabase.rpc("current_user_client_slug");
+      clientSlug = typeof slug === "string" ? slug : null;
+    }
+
+    router.replace(homeForRole(role, clientSlug));
     router.refresh();
   }
 

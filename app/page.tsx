@@ -4,5 +4,5 @@ import { LOGIN_PATH, homeForRole } from "@/lib/auth/roles";
 
 export default async function RootPage() {
   const user = await getSessionUser();
-  redirect(user ? homeForRole(user.role) : LOGIN_PATH);
+  redirect(user ? homeForRole(user.role, user.clientSlug) : LOGIN_PATH);
 }

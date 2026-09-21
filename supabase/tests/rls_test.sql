@@ -24,8 +24,8 @@ insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
   ('00000000-0000-0000-0000-00000000000d', 'clienteb@teste.com.br', '{"nome":"Cliente B"}', '{"role":"cliente"}');
 
 insert into public.clients (id, nome_empresa) values
-  ('11111111-1111-1111-1111-111111111111', 'Empresa A'),
-  ('22222222-2222-2222-2222-222222222222', 'Empresa B');
+  ('11111111-1111-1111-1111-111111111111', 'Mundo Verde'),
+  ('22222222-2222-2222-2222-222222222222', 'ABF');
 
 insert into public.client_users (client_id, user_id) values
   ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000c'),
@@ -90,8 +90,16 @@ select pg_temp.entrar_como('00000000-0000-0000-0000-00000000000c');
 
 select pg_temp.checar(
   (select count(*) from public.clients) = 1
-  and (select nome_empresa from public.clients) = 'Empresa A',
-  'cliente A enxerga apenas a propria empresa');
+  and (select nome_empresa from public.clients) = 'Mundo Verde',
+  'cliente Mundo Verde enxerga apenas a propria empresa');
+
+select pg_temp.checar(
+  (select slug from public.clients) = 'mundo-verde',
+  'o slug e gerado a partir do nome da empresa');
+
+select pg_temp.checar(
+  public.current_user_client_slug() = 'mundo-verde',
+  'o slug da empresa do usuario alimenta o redirecionamento pos-login');
 
 select pg_temp.checar(
   (select count(*) from public.team_members) = 0,
@@ -104,8 +112,18 @@ select pg_temp.checar(
 select pg_temp.entrar_como('00000000-0000-0000-0000-00000000000d');
 
 select pg_temp.checar(
-  (select nome_empresa from public.clients) = 'Empresa B',
-  'cliente B enxerga apenas a propria empresa');
+  (select nome_empresa from public.clients) = 'ABF',
+  'cliente ABF enxerga apenas a propria empresa');
+
+-- Criterio 11: mexer no client_id da consulta nao abre a conta alheia.
+select pg_temp.checar(
+  (select count(*) from public.clients
+   where id = '11111111-1111-1111-1111-111111111111') = 0,
+  'consultar o client_id da outra conta diretamente nao devolve nada');
+
+select pg_temp.checar(
+  (select count(*) from public.clients where slug = 'mundo-verde') = 0,
+  'buscar pelo slug da outra conta nao devolve nada');
 
 -- ---------------------------------------------------------------------------
 -- 3. Equipe interna enxerga tudo
@@ -115,6 +133,19 @@ select pg_temp.entrar_como('00000000-0000-0000-0000-00000000000b');
 select pg_temp.checar(
   (select count(*) from public.clients) = 2,
   'colaborador enxerga todas as empresas');
+
+-- O slug e unico: duas empresas de mesmo nome nao colidem no endereco.
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+insert into public.clients (nome_empresa) values ('Mundo Verde'), ('Mundo Verde');
+
+select pg_temp.checar(
+  (select count(distinct slug) from public.clients where slug like 'mundo-verde%') = 3,
+  'empresas homonimas recebem slugs distintos');
+
+select pg_temp.checar(
+  (select count(*) from public.clients where slug in ('mundo-verde-2', 'mundo-verde-3')) = 2,
+  'a colisao de slug e resolvida com sufixo numerico');
 
 select pg_temp.checar(
   (select count(*) from public.team_members) = 1,

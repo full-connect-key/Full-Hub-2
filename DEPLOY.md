@@ -1,7 +1,7 @@
 # Deploy do Full Hub na VPS da Hostinger
 
 O Full Hub é uma aplicação Next.js: precisa de um processo Node rodando
-continuamente. É esse processo que bloqueia rotas como `/painel/financeiro`
+continuamente. É esse processo que bloqueia rotas como `/dashboard/financeiro`
 **antes** da página renderizar. Por isso o destino é a VPS, e não a hospedagem
 compartilhada.
 

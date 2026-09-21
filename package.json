@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types tests/rotas.test.mts",
+    "test:rls": "echo 'Ver supabase/tests/README.md — exige um Postgres local'"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

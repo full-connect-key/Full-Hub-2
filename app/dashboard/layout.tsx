@@ -4,11 +4,11 @@ import { requireUser } from "@/lib/auth/session";
 import { INTERNAL_HOME } from "@/lib/auth/roles";
 
 /**
- * Painel Interno — colaborador, desenvolvedor e socio.
+ * Dashboard Full — ambiente interno: colaborador, desenvolvedor e socio.
  * O middleware ja barra o acesso indevido; aqui vai a segunda checagem, feita
  * no servidor, para que nenhuma pagina renderize fora do perfil autorizado.
  */
-export default async function PainelLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = (await headers()).get("x-pathname") ?? INTERNAL_HOME;
   const user = await requireUser(pathname);
 

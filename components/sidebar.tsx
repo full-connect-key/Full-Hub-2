@@ -17,9 +17,20 @@ type SidebarProps = {
   nome: string;
   email: string;
   role: Role;
+  /** Nome da empresa, quando se está dentro do portal de uma conta. */
+  contexto?: string;
+  /** Atalho de volta ao Dashboard, para quem é da equipe. */
+  mostrarVoltar?: boolean;
 };
 
-export function Sidebar({ items, nome, email, role }: SidebarProps) {
+export function Sidebar({
+  items,
+  nome,
+  email,
+  role,
+  contexto,
+  mostrarVoltar,
+}: SidebarProps) {
   const pathname = usePathname();
 
   // Preserva a ordem de declaracao dos grupos em lib/auth/roles.ts.
@@ -32,7 +43,23 @@ export function Sidebar({ items, nome, email, role }: SidebarProps) {
     <aside className="flex w-60 shrink-0 flex-col border-r border-fh-border bg-fh-surface">
       <div className="px-5 py-5">
         <Logo />
+        {contexto && (
+          <p className="mt-2.5 truncate text-xs text-fh-muted" title={contexto}>
+            {contexto}
+          </p>
+        )}
       </div>
+
+      {mostrarVoltar && (
+        <div className="px-3 pb-1">
+          <Link
+            href="/dashboard"
+            className="block rounded-lg px-3 py-2 text-sm text-fh-muted transition hover:bg-fh-bg hover:text-fh-text"
+          >
+            ← Voltar ao Dashboard
+          </Link>
+        </div>
+      )}
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
         {Object.entries(grupos).map(([grupo, itens]) => (
@@ -42,11 +69,12 @@ export function Sidebar({ items, nome, email, role }: SidebarProps) {
             </p>
             <ul className="space-y-0.5">
               {itens.map((item) => {
+                // A raiz de cada área só fica ativa no match exato; as demais
+                // também acendem nas subrotas.
+                const raiz = item.href === "/dashboard" || /^\/portal\/[^/]+$/.test(item.href);
                 const ativo =
                   pathname === item.href ||
-                  (item.href !== "/painel" &&
-                    item.href !== "/portal" &&
-                    pathname.startsWith(`${item.href}/`));
+                  (!raiz && pathname.startsWith(`${item.href}/`));
 
                 return (
                   <li key={item.href}>
