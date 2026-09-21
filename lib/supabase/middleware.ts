@@ -4,6 +4,7 @@ import {
   INTERNAL_HOME,
   LOGIN_PATH,
   PORTAL_ROOT,
+  TROCAR_SENHA_PATH,
   canAccessPath,
   canAdministerPortals,
   homeForRole,
@@ -74,25 +75,45 @@ export async function updateSession(request: NextRequest) {
     return redirectTo(LOGIN_PATH, `?next=${encodeURIComponent(pathname)}`);
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
+  // Uma chamada devolve papel, situacao e destino do portal.
+  type StatusDoUsuario = {
+    role: string | null;
+    ativo: boolean | null;
+    deve_trocar_senha: boolean | null;
+    client_slug: string | null;
+  };
 
-  const role = isRole(profile?.role) ? profile.role : "cliente";
+  const { data } = await supabase.rpc("current_user_status").maybeSingle();
+  const status = data as StatusDoUsuario | null;
 
-  // O slug so importa para o cliente: e o que amarra a pessoa a uma conta.
-  let clientSlug: string | null = null;
-  if (role === "cliente") {
-    const { data } = await supabase.rpc("current_user_client_slug");
-    clientSlug = typeof data === "string" ? data : null;
-  }
+  const role = isRole(status?.role) ? status.role : "cliente";
+  const ativo = status?.ativo ?? false;
+  const deveTrocarSenha = status?.deve_trocar_senha ?? false;
+  const clientSlug = typeof status?.client_slug === "string" ? status.client_slug : null;
 
   const home = homeForRole(role, clientSlug);
 
+  // Acesso desativado pela administracao: encerra e volta ao login.
+  if (!ativo) {
+    await supabase.auth.signOut();
+    return redirectTo(LOGIN_PATH, "?motivo=desativado");
+  }
+
   // Ja logado: a raiz e a tela de login levam direto para a home do perfil.
   if (pathname === "/" || pathname === LOGIN_PATH) {
+    return redirectTo(home);
+  }
+
+  // Senha provisoria: nenhum modulo abre antes da troca.
+  if (deveTrocarSenha) {
+    if (pathname === TROCAR_SENHA_PATH || pathname.startsWith("/auth/")) {
+      return supabaseResponse;
+    }
+    return redirectTo(TROCAR_SENHA_PATH);
+  }
+
+  // Ja trocou: a tela de troca nao tem mais o que fazer.
+  if (pathname === TROCAR_SENHA_PATH) {
     return redirectTo(home);
   }
 

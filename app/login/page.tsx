@@ -11,6 +11,12 @@ export default async function LoginPage({
 }) {
   const { next, motivo } = await searchParams;
 
+  const avisos: Record<string, string> = {
+    inatividade: "Sua sessão foi encerrada por inatividade. Entre novamente para continuar.",
+    desativado: "Seu acesso está desativado. Fale com a equipe da Full Connect Key.",
+  };
+  const aviso = motivo ? avisos[motivo] : undefined;
+
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-12">
       <div className="w-full max-w-sm">
@@ -18,9 +24,9 @@ export default async function LoginPage({
           <Logo size="lg" />
         </div>
 
-        {motivo === "inatividade" && (
+        {aviso && (
           <p className="mb-5 rounded-lg border border-fh-border bg-fh-surface px-4 py-3 text-sm text-fh-muted">
-            Sua sessão foi encerrada por inatividade. Entre novamente para continuar.
+            {aviso}
           </p>
         )}
 

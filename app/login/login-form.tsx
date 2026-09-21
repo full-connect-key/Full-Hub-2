@@ -45,7 +45,7 @@ export function LoginForm({ next }: { next?: string }) {
     // A escolha acima define a experiência de entrada. O destino real vem
     // sempre do banco: se não baterem, o banco vence.
     const { data: profile } = await supabase
-      .from("users")
+      .from("profiles")
       .select("role")
       .eq("id", data.user.id)
       .maybeSingle();

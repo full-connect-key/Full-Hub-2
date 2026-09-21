@@ -9,6 +9,8 @@
   --fh-brand: #1c4ed8;
   --fh-brand-strong: #173fad;
   --fh-danger: #b42318;
+  --fh-ok: #10683f;
+  --fh-ok-soft: rgba(16, 104, 63, 0.10);
 }
 
 @theme inline {
@@ -20,6 +22,8 @@
   --color-fh-brand: var(--fh-brand);
   --color-fh-brand-strong: var(--fh-brand-strong);
   --color-fh-danger: var(--fh-danger);
+  --color-fh-ok: var(--fh-ok);
+  --color-fh-ok-soft: var(--fh-ok-soft);
   --font-sans: var(--font-system);
 }
 

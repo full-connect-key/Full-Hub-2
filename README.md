@@ -58,13 +58,32 @@ A sidebar apenas *esconde* o que essas camadas já proíbem.
 > (posts, campanhas, arquivos, aprovações, comentários). Dashboard e Portal trabalham sobre os
 > mesmos registros; nunca duplicar base para as duas interfaces.
 
+### Administração de acessos
+
+`desenvolvedor` e `socio` administram pessoas e contas em **Equipe & Skills**, com duas abas:
+
+- **Colaboradores** — equipe interna, com busca, filtros por área/papel/status, criação,
+  edição, redefinição de senha e ativação/desativação
+- **Clientes** — empresas atendidas, com o detalhe de cada conta e seus usuários
+
+Criar acesso e redefinir senha passam por **Edge Functions** ([supabase/functions](supabase/functions/README.md)):
+a `service_role` vive só lá, e a autorização é decidida no servidor consultando o banco —
+nunca por um campo vindo do frontend.
+
+Toda conta nasce com senha provisória sorteada e `deve_trocar_senha = true`. Enquanto isso for
+verdade, nenhum módulo abre: o middleware manda para `/auth/trocar-senha`.
+
+Desativar é sempre *soft delete* (`ativo = false`): o login é bloqueado e o histórico fica.
+Desativar uma **empresa** bloqueia todos os usuários dela de uma vez, sem tocar em cada perfil —
+`current_user_client_ids()` passa a devolver vazio.
+
 ### Testes
 
 ```bash
-npm test     # 21 verificações de rota e permissão por perfil
+npm test     # 25 verificações de rota e permissão por perfil
 ```
 
-Os testes de RLS rodam contra um Postgres local — 23 verificações, ver
+Os testes de RLS rodam contra um Postgres local — 44 verificações, ver
 [supabase/tests](supabase/tests/README.md).
 
 ---
@@ -91,10 +110,12 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 Rode `supabase/migrations/20260921000001_init.sql` no **SQL Editor** do Supabase
 (ou `supabase db push` com a CLI). A migration cria:
 
-- `users` — espelho de `auth.users` com o `role` de cada pessoa
-- `clients` — empresas atendidas (inclui `drive_folder_id`)
-- `client_users` — vínculo N:N entre usuários e empresas
+- `profiles` — espelho de `auth.users`: papel, situação, cargo, área, datas
+- `clients` — empresas atendidas (slug, logo, status)
+- `client_users` — vínculo entre usuário e empresa, **um cliente por usuário**
 - `team_members` — dados de RH da equipe interna
+- `areas_equipe` — áreas da agência, usadas nos formulários
+- `activity_log` — auditoria das ações administrativas
 - Trigger que cria a linha em `users` a cada conta nova no Auth
 - Policies de RLS em todas as tabelas
 - Trigger que impede a escalação de privilégio na coluna `role`
@@ -184,7 +205,9 @@ app/
   redefinir-senha/        criação da nova senha
   auth/confirm/           consome o link do e-mail e abre a sessão
   auth/signout/           encerra a sessão
+  auth/trocar-senha/      troca obrigatória da senha provisória
   dashboard/              Dashboard Full (layout + telas por módulo)
+  dashboard/equipe/       Equipe & Skills: colaboradores e clientes
   portal/                 raiz: cliente é encaminhado, equipe escolhe a conta
   portal/[slug]/          Portal de uma empresa (timeout + telas)
 components/
@@ -196,9 +219,11 @@ components/
   page-placeholder.tsx    tela vazia dos módulos futuros
 lib/
   auth/roles.ts           perfis, menus e autorização de rota
-  auth/session.ts         usuário da sessão + guardas de servidor
+  auth/session.ts         usuário da sessão, guardas e listagens
+  actions/admin.ts        Server Actions da administração
   supabase/               clients (browser / server / middleware)
-supabase/migrations/      schema, RLS e slugs
+supabase/migrations/      schema, RLS, slugs e administração
+supabase/functions/       Edge Functions (criar-usuario, redefinir-senha)
 supabase/tests/           testes de RLS
 tests/                    testes de rota e permissão
 middleware.ts             refresh de sessão + bloqueio por role
@@ -206,8 +231,25 @@ middleware.ts             refresh de sessão + bloqueio por role
 
 ---
 
+## Nomes das tabelas
+
+O roadmap usa alguns nomes em português; o banco segue a convenção do Supabase:
+
+| Roadmap | Banco | Por quê |
+|---|---|---|
+| `profiles.papel` | `profiles.role` | a coluna já é referenciada pelas policies e pelos testes |
+| `clientes` | `clients` | consistência com `client_users` |
+
+A tabela `profiles` chamava-se `users`: foi renomeada para não confundir com `auth.users`,
+que é outra coisa.
+
 ## Decisões que valem revisar
 
+- **A conclusão da troca de senha é feita pelo próprio usuário.** Depois de `updateUser`, o app
+  grava `deve_trocar_senha = false`. O banco impede *exigir* troca para si, mas não tem como
+  provar que a senha realmente mudou — para isso, a conclusão teria de passar por Edge Function.
+- **Logos de cliente ainda não sobem.** O campo `logo_url` existe e é exibido; falta o bucket
+  `client-assets` e a tela de upload.
 - **Colaborador não abre portal de cliente.** O roadmap cita apenas `desenvolvedor` e `socio`
   com acesso administrativo às contas. Muda-se em `PORTAL_ADMIN_ROLES`.
 - **Aprovações de RH** (`/dashboard/rh/aprovacoes`) ficaram restritas a `socio`, seguindo a

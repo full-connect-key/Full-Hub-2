@@ -23,6 +23,7 @@ export const CLIENT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 export const INTERNAL_HOME = "/dashboard";
 export const PORTAL_ROOT = "/portal";
 export const LOGIN_PATH = "/login";
+export const TROCAR_SENHA_PATH = "/auth/trocar-senha";
 
 /** Escolha feita na tela de login. Define a entrada, nunca a permissao. */
 export const AUDIENCES = ["colaborador", "cliente"] as const;
@@ -81,8 +82,7 @@ export const INTERNAL_NAV: readonly NavItem[] = [
   { href: "/dashboard/skills", label: "Skills", group: "Operação", roles: INTERNAL_ROLES },
   { href: "/dashboard/recomendacoes", label: "Recomendações", group: "Operação", roles: INTERNAL_ROLES },
 
-  { href: "/dashboard/clientes", label: "Clientes", group: "Gestão", roles: ["desenvolvedor", "socio"] },
-  { href: "/dashboard/equipe", label: "Equipe", group: "Gestão", roles: ["desenvolvedor", "socio"] },
+  { href: "/dashboard/equipe", label: "Equipe & Skills", group: "Gestão", roles: ["desenvolvedor", "socio"] },
 
   { href: "/dashboard/rh", label: "Minhas solicitações", group: "RH", roles: INTERNAL_ROLES },
   { href: "/dashboard/rh/aprovacoes", label: "Aprovações de RH", group: "RH", roles: ["socio"] },

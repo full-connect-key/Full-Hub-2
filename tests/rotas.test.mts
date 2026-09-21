@@ -7,7 +7,13 @@
  * Rodar:  npm test
  */
 import assert from "node:assert/strict";
-import { canAccessPath, homeForRole, navForRole, type Role } from "../lib/auth/roles.ts";
+import {
+  canAccessPath,
+  canAdministerPortals,
+  homeForRole,
+  navForRole,
+  type Role,
+} from "../lib/auth/roles.ts";
 
 let passou = 0;
 const falhas: string[] = [];
@@ -115,9 +121,38 @@ checar("colaborador acessa o básico da operação", () => {
   }
 });
 
-checar("colaborador não acessa Clientes nem Equipe", () => {
-  assert.equal(canAccessPath("colaborador", "/dashboard/clientes"), false);
+checar("colaborador não acessa a área de gestão", () => {
+  // Clientes deixou de ser rota própria: virou aba dentro de Equipe & Skills.
   assert.equal(canAccessPath("colaborador", "/dashboard/equipe"), false);
+  assert.equal(canAccessPath("colaborador", "/dashboard/equipe/clientes/abc"), false);
+});
+
+console.log("\nSprint 2 — administração:");
+
+checar("Equipe & Skills é só de desenvolvedor e sócio", () => {
+  assert.equal(canAccessPath("socio", "/dashboard/equipe"), true);
+  assert.equal(canAccessPath("desenvolvedor", "/dashboard/equipe"), true);
+  assert.equal(canAccessPath("colaborador", "/dashboard/equipe"), false);
+  assert.equal(canAccessPath("cliente", "/dashboard/equipe", MUNDO_VERDE), false);
+});
+
+checar("o detalhe de um cliente segue a mesma permissão", () => {
+  const rota = "/dashboard/equipe/clientes/abc-123";
+  assert.equal(canAccessPath("socio", rota), true);
+  assert.equal(canAccessPath("desenvolvedor", rota), true);
+  assert.equal(canAccessPath("colaborador", rota), false);
+});
+
+checar("quem administra acessos é quem administra portais", () => {
+  assert.equal(canAdministerPortals("socio"), true);
+  assert.equal(canAdministerPortals("desenvolvedor"), true);
+  assert.equal(canAdministerPortals("colaborador"), false);
+  assert.equal(canAdministerPortals("cliente"), false);
+});
+
+checar("o menu do colaborador não mostra Equipe & Skills", () => {
+  const itens = navForRole("colaborador");
+  assert.ok(!itens.some((i) => i.href.includes("/equipe")));
 });
 
 console.log("\nMenu lateral:");
