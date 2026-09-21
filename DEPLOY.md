@@ -15,6 +15,45 @@ O Nginx é quem fala com a internet; o Next escuta apenas em localhost.
 
 ---
 
+## Instalação em um comando
+
+Numa VPS Ubuntu limpa, isto faz tudo: instala Node, Nginx e PM2, clona o
+projeto, builda, configura o proxy reverso e emite o certificado SSL.
+
+```bash
+ssh root@SEU_IP_AQUI
+
+curl -fsSL https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/deploy/bootstrap.sh -o bootstrap.sh
+bash bootstrap.sh
+```
+
+O script pergunta três coisas — domínio, URL do Supabase e chave pública — e
+valida cada uma antes de seguir (ele recusa, por exemplo, a `service_role`, que
+nunca deve ir para o servidor web). Ao terminar, imprime o endereço do site e o
+que ainda falta configurar no painel do Supabase.
+
+Leva de 5 a 10 minutos, quase tudo no build. Pode rodar de novo quantas vezes
+precisar: ele só refaz o que está faltando.
+
+**Se o domínio ainda não estiver apontando para a VPS**, o script avisa, deixa o
+site no ar por HTTP e diz qual IP configurar. Aponte o DNS e rode de novo para
+ganhar o HTTPS.
+
+Para rodar sem perguntas:
+
+```bash
+DOMINIO=hub.suaagencia.com.br \
+SUPABASE_URL=https://xxxx.supabase.co \
+SUPABASE_KEY=sb_publishable_xxx \
+EMAIL_SSL=voce@agencia.com.br \
+bash bootstrap.sh
+```
+
+O passo a passo manual abaixo continua valendo — use se quiser entender cada
+etapa, ou se algo falhar no meio do caminho.
+
+---
+
 ## Antes de começar
 
 Tenha em mãos:
@@ -25,7 +64,7 @@ Tenha em mãos:
 
 ---
 
-## 1. Preparar o servidor
+## 1. Preparar o servidor (manual)
 
 Conecte via SSH e instale o que falta:
 
