@@ -112,6 +112,8 @@ npm run build     # build de produção
 npm run typecheck # checagem de tipos
 ```
 
+Para publicar na VPS, veja **[DEPLOY.md](DEPLOY.md)**.
+
 ---
 
 ## Segurança da sessão
