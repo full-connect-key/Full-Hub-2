@@ -69,6 +69,10 @@ Rode `supabase/migrations/20260921000001_init.sql` no **SQL Editor** do Supabase
 - `team_members` — dados de RH da equipe interna
 - Trigger que cria a linha em `users` a cada conta nova no Auth
 - Policies de RLS em todas as tabelas
+- Trigger que impede a escalação de privilégio na coluna `role`
+
+Para conferir que o isolamento está de pé, rode os testes de RLS — instruções em
+[supabase/tests](supabase/tests/README.md).
 
 ### 3. Configurar o Auth no Supabase
 
@@ -127,6 +131,9 @@ Para publicar na VPS, veja **[DEPLOY.md](DEPLOY.md)**.
   esse timeout.
 - A recuperação de senha responde sempre a mesma mensagem, existindo a conta ou não, para não
   permitir enumeração de usuários.
+- A coluna `role` é protegida por trigger: ninguém altera o próprio perfil, nem mesmo com acesso
+  direto à API do Supabase. Só um `socio` promove outra pessoa. Ver
+  [supabase/tests](supabase/tests/README.md).
 
 ---
 

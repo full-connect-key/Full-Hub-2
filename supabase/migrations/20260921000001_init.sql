@@ -131,6 +131,33 @@ as $$
   select coalesce(public.current_user_role() = 'socio', false);
 $$;
 
+-- Impede que um usuario altere o proprio role (escalacao de privilegio).
+-- RLS controla linhas, nao colunas: a policy users_update_self libera a linha
+-- inteira para a propria pessoa, entao o bloqueio da coluna vai num trigger.
+create or replace function public.guard_role_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- auth.uid() nulo = contexto administrativo (SQL Editor, service_role).
+  -- E assim que o primeiro socio e promovido, entao nao bloqueamos esse caso.
+  if auth.uid() is not null
+     and new.role is distinct from old.role
+     and not public.is_socio() then
+    raise exception 'Somente um socio pode alterar o perfil de um usuario'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists users_guard_role_change on public.users;
+create trigger users_guard_role_change
+  before update on public.users
+  for each row execute function public.guard_role_change();
+
 -- Empresas as quais o usuario logado esta vinculado
 create or replace function public.current_user_client_ids()
 returns setof uuid
@@ -159,6 +186,8 @@ drop policy if exists "users_select_internal" on public.users;
 create policy "users_select_internal" on public.users
   for select using (public.is_internal());
 
+-- A pessoa edita a propria linha (nome, avatar). A coluna role fica protegida
+-- pelo trigger users_guard_role_change.
 drop policy if exists "users_update_self" on public.users;
 create policy "users_update_self" on public.users
   for update using (id = auth.uid()) with check (id = auth.uid());
