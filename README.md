@@ -97,6 +97,15 @@ update public.users set role = 'socio', nome = 'Seu Nome'
 where email = 'voce@agencia.com.br';
 ```
 
+> O perfil de uma conta nova é sempre `cliente`. O `role` só é lido de
+> `app_metadata`, que apenas a API de admin escreve — assim ninguém se cadastra
+> escolhendo o próprio nível de acesso. Promover é sempre um ato deliberado:
+> pelo SQL Editor, como acima, ou por um `socio` dentro do sistema.
+
+Como este é um sistema interno, vale desativar o cadastro público em
+*Authentication → Sign In / Providers → Email*, desmarcando **Allow new users to
+sign up**. Assim só quem a agência cadastrar entra.
+
 Para um usuário cliente, além de definir `role = 'cliente'`, vincule-o a uma empresa:
 
 ```sql
@@ -132,8 +141,9 @@ Para publicar na VPS, veja **[DEPLOY.md](DEPLOY.md)**.
 - A recuperação de senha responde sempre a mesma mensagem, existindo a conta ou não, para não
   permitir enumeração de usuários.
 - A coluna `role` é protegida por trigger: ninguém altera o próprio perfil, nem mesmo com acesso
-  direto à API do Supabase. Só um `socio` promove outra pessoa. Ver
-  [supabase/tests](supabase/tests/README.md).
+  direto à API do Supabase. Só um `socio` promove outra pessoa.
+- O perfil de uma conta nova nunca vem do cadastro: é lido de `app_metadata`, gravável apenas pela
+  API de admin. Ver [supabase/tests](supabase/tests/README.md).
 
 ---
 

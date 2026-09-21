@@ -3,9 +3,11 @@
 Verificam o que sustenta a segurança do Full Hub no banco: o isolamento dos
 dados por `client_id` e o bloqueio de escalação de privilégio.
 
-Quinze checagens, entre elas:
+Dezessete checagens, entre elas:
 
 - toda conta criada no Auth ganha linha em `public.users`
+- cadastro público **não consegue** escolher o próprio perfil
+- valor inválido no metadata cai para `cliente` sem quebrar a criação da conta
 - cliente enxerga apenas a própria empresa, nunca a de outro cliente
 - cliente não lê os dados de RH da equipe
 - cliente e colaborador **não conseguem** se promover a `socio`
@@ -53,3 +55,21 @@ SQL Editor, por onde o primeiro sócio é promovido.
 
 Esse caso está coberto pelos testes; se alguém afrouxar a policy no futuro, eles
 quebram.
+
+## Por que o role vem de `raw_app_meta_data`
+
+O Supabase guarda dois metadados em cada conta:
+
+| Campo | Quem escreve |
+|---|---|
+| `raw_user_meta_data` | o próprio usuário, no `signUp` |
+| `raw_app_meta_data` | apenas a API de admin (`service_role`) |
+
+O trigger de criação lê o `role` do **segundo**. Se lesse do primeiro, qualquer
+pessoa se cadastraria como sócio:
+
+```js
+supabase.auth.signUp({ email, password, options: { data: { role: 'socio' } } })
+```
+
+Um teste cobre exatamente essa tentativa.

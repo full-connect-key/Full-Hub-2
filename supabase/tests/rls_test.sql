@@ -16,11 +16,12 @@ begin;
 -- ---------------------------------------------------------------------------
 -- Massa de teste
 -- ---------------------------------------------------------------------------
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-00000000000a', 'socio@teste.com.br',      '{"nome":"Socio","role":"socio"}'),
-  ('00000000-0000-0000-0000-00000000000b', 'colab@teste.com.br',      '{"nome":"Colab","role":"colaborador"}'),
-  ('00000000-0000-0000-0000-00000000000c', 'clientea@teste.com.br',   '{"nome":"Cliente A","role":"cliente"}'),
-  ('00000000-0000-0000-0000-00000000000d', 'clienteb@teste.com.br',   '{"nome":"Cliente B","role":"cliente"}');
+-- Contas criadas pela API de admin: o role vai em raw_app_meta_data.
+insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
+  ('00000000-0000-0000-0000-00000000000a', 'socio@teste.com.br',    '{"nome":"Socio"}',     '{"role":"socio"}'),
+  ('00000000-0000-0000-0000-00000000000b', 'colab@teste.com.br',    '{"nome":"Colab"}',     '{"role":"colaborador"}'),
+  ('00000000-0000-0000-0000-00000000000c', 'clientea@teste.com.br', '{"nome":"Cliente A"}', '{"role":"cliente"}'),
+  ('00000000-0000-0000-0000-00000000000d', 'clienteb@teste.com.br', '{"nome":"Cliente B"}', '{"role":"cliente"}');
 
 insert into public.clients (id, nome_empresa) values
   ('11111111-1111-1111-1111-111111111111', 'Empresa A'),
@@ -63,7 +64,24 @@ select pg_temp.checar(
 
 select pg_temp.checar(
   (select role from public.users where email = 'socio@teste.com.br') = 'socio',
-  'o role vem do metadata da conta');
+  'o role vem do metadata de admin (raw_app_meta_data)');
+
+-- Cadastro publico tentando escolher o proprio perfil: o role pedido em
+-- raw_user_meta_data tem que ser ignorado.
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-00000000000e', 'esperto@teste.com.br', '{"nome":"Esperto","role":"socio"}');
+
+select pg_temp.checar(
+  (select role from public.users where email = 'esperto@teste.com.br') = 'cliente',
+  'cadastro publico nao consegue escolher o proprio role');
+
+-- Metadata com valor invalido nao pode derrubar a criacao da conta.
+insert into auth.users (id, email, raw_app_meta_data) values
+  ('00000000-0000-0000-0000-00000000000f', 'invalido@teste.com.br', '{"role":"superadmin"}');
+
+select pg_temp.checar(
+  (select role from public.users where email = 'invalido@teste.com.br') = 'cliente',
+  'role invalido no metadata cai para cliente sem quebrar o cadastro');
 
 -- ---------------------------------------------------------------------------
 -- 2. Isolamento por client_id

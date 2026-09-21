@@ -78,13 +78,26 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_role public.user_role;
 begin
+  -- O role sai de raw_app_meta_data, nunca de raw_user_meta_data: o primeiro so
+  -- e gravavel pela API de admin (service_role), enquanto o segundo vem do
+  -- proprio cadastro. Ler o role do metadata do usuario deixaria qualquer um
+  -- nascer socio passando {"role":"socio"} no signUp.
+  begin
+    v_role := coalesce((new.raw_app_meta_data ->> 'role')::public.user_role, 'cliente');
+  exception when others then
+    -- Valor invalido no metadata nao pode derrubar a criacao da conta.
+    v_role := 'cliente';
+  end;
+
   insert into public.users (id, email, nome, role)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'nome', ''),
-    coalesce((new.raw_user_meta_data ->> 'role')::public.user_role, 'cliente')
+    v_role
   )
   on conflict (id) do nothing;
   return new;
