@@ -1,0 +1,42 @@
+# Configuração do projeto Supabase como arquivo.
+#
+# As etapas 2, 3 e 4 do SETUP.md (URLs do Auth, template de recuperação de
+# senha e cadastro público) normalmente são cliques no painel. Declaradas aqui,
+# vão todas de uma vez com:
+#
+#   npx supabase link --project-ref bqrxokpphvvblrturuuh
+#   npx supabase config push
+#
+# Precisa de uma versão recente do CLI. Se o comando reclamar de alguma chave,
+# o painel continua sendo o caminho — o SETUP.md tem o passo a passo manual.
+
+project_id = "bqrxokpphvvblrturuuh"
+
+[auth]
+# Base dos links enviados por e-mail. Trocar pelo domínio real ao subir na VPS.
+site_url = "http://localhost:3000"
+
+# Para onde o Supabase aceita redirecionar depois de um link de e-mail.
+additional_redirect_urls = [
+  "http://localhost:3000/auth/confirm",
+  "https://hub.suaagencia.com.br/auth/confirm",
+]
+
+# Full Hub é interno: quem entra é cadastrado pela agência, em Equipe & Skills.
+enable_signup = false
+
+# Sessão de 7 dias, com refresh. O encerramento por inatividade de 30 min do
+# Portal do Cliente é feito na aplicação, não aqui.
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+[auth.email]
+enable_signup = false
+# Contas criadas pela Edge Function já nascem confirmadas.
+enable_confirmations = false
+secure_password_change = true
+
+[auth.email.template.recovery]
+subject = "Criar nova senha no Full Hub"
+content_path = "./supabase/templates/recovery.html"

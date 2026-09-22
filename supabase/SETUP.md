@@ -57,6 +57,28 @@ copie e cole). Deve terminar em "Banco pronto".
 
 ---
 
+## Etapas 2, 3 e 4 em um comando
+
+As três são configuração do Auth e estão declaradas em
+[`config.toml`](config.toml). Em vez de clicar no painel:
+
+```bash
+npx supabase link --project-ref bqrxokpphvvblrturuuh
+npx supabase config push
+```
+
+Isso aplica a Site URL, as Redirect URLs, o template do e-mail de recuperação e
+o desligamento do cadastro público de uma vez.
+
+Antes de rodar, edite em `config.toml` o domínio de produção dentro de
+`additional_redirect_urls` — está como `hub.suaagencia.com.br`.
+
+> Exige uma versão recente do CLI, e eu não pude testar este comando contra o
+> seu projeto. Se ele reclamar de alguma chave, faça pelo painel: o passo a
+> passo manual das três etapas continua logo abaixo.
+
+---
+
 ## 2. URLs do Auth
 
 Em **Authentication → URL Configuration**:
