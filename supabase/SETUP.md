@@ -5,28 +5,55 @@ Pode ser seguido de uma vez ou retomado do ponto em que parou.
 
 **Projeto atual:** `bqrxokpphvvblrturuuh`
 
-A qualquer momento, rode [`verificar.sql`](verificar.sql) no SQL Editor para
-saber o que já está pronto e o que falta. Ele não altera nada.
+A qualquer momento, cole o conteúdo de
+[`verificar.sql`](https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/supabase/verificar.sql)
+no SQL Editor para saber o que já está pronto e o que falta. Ele não altera nada.
+
+> Em todo este roteiro, "rodar um arquivo" significa **abrir, copiar o conteúdo
+> e colar** no SQL Editor — o caminho do arquivo não é SQL válido.
 
 ---
 
 ## 1. Migrations
 
-No **SQL Editor**, rode os três arquivos **nesta ordem**, um de cada vez:
+O SQL Editor executa **o conteúdo** dos arquivos, não o caminho deles. Para cada
+um dos três, na ordem:
 
-| Ordem | Arquivo | O que cria |
+1. abra o link abaixo — ele mostra o arquivo como texto puro;
+2. selecione tudo (`Ctrl+A` / `Cmd+A`) e copie;
+3. cole no SQL Editor e clique em **Run**;
+4. só então passe para o próximo.
+
+| Ordem | Link para copiar | O que cria |
 |---|---|---|
-| 1 | `migrations/20260921000001_init.sql` | tabelas base, RLS, proteção do papel |
-| 2 | `migrations/20260921000002_client_slug.sql` | endereço de cada cliente |
-| 3 | `migrations/20260921000003_admin.sql` | administração, áreas, auditoria |
+| 1 | [20260921000001_init.sql](https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/supabase/migrations/20260921000001_init.sql) | tabelas base, RLS, proteção do papel |
+| 2 | [20260921000002_client_slug.sql](https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/supabase/migrations/20260921000002_client_slug.sql) | endereço de cada cliente |
+| 3 | [20260921000003_admin.sql](https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/supabase/migrations/20260921000003_admin.sql) | administração, áreas, auditoria |
 
-São idempotentes: rodar de novo por cima não quebra nada. Mensagens
-`NOTICE ... skipping` são normais.
+Mensagens `NOTICE ... does not exist, skipping` são normais: fazem parte de
+tornar os arquivos repetíveis.
 
-> Se você rodou o arquivo 1 antes de 22/09, **rode de novo**: ele mudou duas
-> vezes, e é onde estão as duas correções de segurança.
+> **Se já rodou o arquivo 3 antes**, não volte a rodar o 1: ele aborta de
+> propósito, com explicação. As correções que estavam nele já vêm no 3, então
+> basta rodar o 3 de novo.
 
-Confira com `verificar.sql`. Deve terminar em "Banco pronto".
+### Alternativa: pela linha de comando
+
+Se preferir não copiar e colar, com o [Supabase CLI](https://supabase.com/docs/guides/cli):
+
+```bash
+git clone https://github.com/full-connect-key/Full-Hub-2.git
+cd Full-Hub-2
+npx supabase login
+npx supabase link --project-ref bqrxokpphvvblrturuuh
+npx supabase db push
+```
+
+O `db push` aplica os três na ordem certa sozinho.
+
+Confira com `verificar.sql` (mesmo método: abra
+[o arquivo em texto puro](https://raw.githubusercontent.com/full-connect-key/Full-Hub-2/main/supabase/verificar.sql),
+copie e cole). Deve terminar em "Banco pronto".
 
 ---
 
@@ -165,6 +192,12 @@ Rode `verificar.sql`. Depois, no Full Hub:
 ---
 
 ## Quando algo falha
+
+**`syntax error at or near "migrations"`** — foi colado o caminho do arquivo em
+vez do conteúdo. Abra o link, copie tudo e cole de novo.
+
+**`Este banco ja passou pela migration 20260921000003`** — proteção proposital:
+você rodou o arquivo 1 depois do 3. Rode só o 3.
 
 **"Você não possui permissão para realizar esta ação."** ao criar colaborador —
 a Edge Function não reconheceu você como admin. Confira se o seu `profiles.role`

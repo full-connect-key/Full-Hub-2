@@ -4,6 +4,23 @@
 -- o isolamento por client_id no Portal do Cliente.
 -- =============================================================================
 
+-- Proteção contra re-execução fora de ordem.
+--
+-- A migration 20260921000003 renomeia public.users para public.profiles. Se
+-- este arquivo rodasse depois disso, o "create table if not exists" criaria uma
+-- SEGUNDA tabela users, vazia, e o trigger de cadastro passaria a gravar nela —
+-- silenciosamente, com os acessos indo parar no lugar errado.
+do $$
+begin
+  if to_regclass('public.profiles') is not null and to_regclass('public.users') is null then
+    raise exception
+      'Este banco ja passou pela migration 20260921000003 (a tabela chama-se profiles). '
+      'Nao rode esta migration de novo: as correcoes de seguranca dela ja estao incluidas '
+      'na 20260921000003, entao rode aquela.';
+  end if;
+end
+$$;
+
 create extension if not exists "pgcrypto";
 
 -- -----------------------------------------------------------------------------
