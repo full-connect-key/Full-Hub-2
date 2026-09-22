@@ -88,16 +88,30 @@ Os testes de RLS rodam contra um Postgres local — 44 verificações, ver
 
 ---
 
+## Rodar no navegador, sem instalar nada
+
+O jeito mais rápido de ver o Full Hub funcionando: **Code → Codespaces → Create
+codespace on main**, no GitHub.
+
+O ambiente sobe com Node 22, instala as dependências e já abre o site numa aba.
+As chaves públicas do Supabase vêm de [`.env.development`](.env.development), então
+não há nada para configurar.
+
+Para entrar, é preciso ter uma conta no Supabase Auth com papel definido — ver
+[supabase/SETUP.md](supabase/SETUP.md), passo 7.
+
 ## Configuração
 
 ### 1. Instalar
 
+Na sua máquina (precisa de git e Node 20+):
+
 ```bash
 npm install
-cp .env.example .env.local
 ```
 
-Preencha `.env.local` com as chaves do seu projeto Supabase (*Settings → API*):
+As chaves públicas de desenvolvimento já vêm em `.env.development`. Para apontar
+para outro projeto Supabase, crie um `.env.local` — ele tem precedência:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co

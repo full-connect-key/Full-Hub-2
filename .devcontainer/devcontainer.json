@@ -1,0 +1,42 @@
+{
+  // Ambiente de desenvolvimento do Full Hub, pronto para rodar no navegador
+  // via GitHub Codespaces — sem instalar nada na máquina.
+  //
+  // Code → Codespaces → Create codespace on main
+  "name": "Full Hub",
+
+  // Imagem oficial com Node 22 LTS, a mesma versão usada no build de produção.
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+
+  // Instala as dependências enquanto o ambiente sobe.
+  // O CLI do Supabase não precisa de instalação: use "npx supabase ...".
+  "postCreateCommand": "npm install",
+
+  // Ao abrir, já deixa o site rodando.
+  "postAttachCommand": {
+    "servidor": "npm run dev"
+  },
+
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Full Hub",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": false,
+        "files.eol": "\n"
+      }
+    }
+  },
+
+  "remoteUser": "node"
+}
